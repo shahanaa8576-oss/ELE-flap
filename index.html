@@ -18,7 +18,7 @@
   </style>
 </head>
 <body>
-<canvas id="gameCanvas" width="400" height="600"></canvas>
+<canvas id="gameCanvas" width="800" height="400"></canvas>
 
 <script>
 const canvas = document.getElementById("gameCanvas");
@@ -31,18 +31,15 @@ let gameOver = false;
 let elephantImg = new Image();
 elephantImg.src = "ele.png"; // your elephant image
 
-// Tree obstacle images
-let treeTopImg = new Image();
-treeTopImg.src = "https://i.ibb.co/3rR0gLZ/tree-top.png"; // cartoon tree top
-
-let treeBottomImg = new Image();
-treeBottomImg.src = "https://i.ibb.co/Tb5hj6q/tree-bottom.png"; // cartoon tree bottom
+// Tree obstacle image
+let treeImg = new Image();
+treeImg.src = "tree.jpg"; // your tree image
 
 // Elephant object (small size)
-let elephant = { x: 50, y: 300, width: 50, height: 50, gravity: 0.5, lift: -8, velocity: 0 };
+let elephant = { x: 50, y: 200, width: 60, height: 60, gravity: 0.5, lift: -8, velocity: 0 };
 
 // Obstacles
-let pipes = [];
+let trees = [];
 let frame = 0;
 let score = 0;
 let bestScore = 0;
@@ -84,11 +81,11 @@ function drawElephant() {
   ctx.drawImage(elephantImg, elephant.x, elephant.y, elephant.width, elephant.height);
 }
 
-// Draw obstacles as trees
-function drawPipes() {
-  pipes.forEach(pipe => {
-    ctx.drawImage(treeTopImg, pipe.x, 0, pipe.width, pipe.top); // top tree
-    ctx.drawImage(treeBottomImg, pipe.x, canvas.height - pipe.bottom, pipe.width, pipe.bottom); // bottom tree
+// Draw trees as obstacles
+function drawTrees() {
+  trees.forEach(tree => {
+    ctx.drawImage(treeImg, tree.x, 0, tree.width, tree.top); // top tree
+    ctx.drawImage(treeImg, tree.x, canvas.height - tree.bottom, tree.width, tree.bottom); // bottom tree
   });
 }
 
@@ -96,7 +93,7 @@ function drawPipes() {
 function drawScore() {
   ctx.fillStyle = "#fff";
   ctx.font = "20px Comic Sans MS";
-  ctx.fillText("Score: " + score, 60, 50);
+  ctx.fillText("Score: " + score, 60, 40);
 }
 
 // Game loop
@@ -121,36 +118,32 @@ function update() {
   drawElephant();
 
   // Create obstacles periodically
-  if (frame % 90 === 0) {
+  if (frame % 120 === 0) {
     let top = Math.random() * (canvas.height/2);
-    let bottom = canvas.height - top - 150;
-    pipes.push({ x: canvas.width, width: 50, top: top, bottom: bottom });
+    let bottom = canvas.height - top - 120; // gap
+    trees.push({ x: canvas.width, width: 60, top: top, bottom: bottom });
   }
 
   // Update obstacles
-  pipes.forEach((pipe, index) => {
-    pipe.x -= 2;
-    if (pipe.x + pipe.width < 0) pipes.splice(index, 1);
+  trees.forEach((tree, index) => {
+    tree.x -= 3; // speed
+    if (tree.x + tree.width < 0) trees.splice(index, 1);
 
     // Collision detection
-    if (elephant.x < pipe.x + pipe.width && elephant.x + elephant.width > pipe.x &&
-        (elephant.y < pipe.top || elephant.y + elephant.height > canvas.height - pipe.bottom)) {
+    if (elephant.x < tree.x + tree.width && elephant.x + elephant.width > tree.x &&
+        (elephant.y < tree.top || elephant.y + elephant.height > canvas.height - tree.bottom)) {
       endGame();
     }
 
     // Score
-    if (pipe.x + pipe.width === elephant.x) {
-      score++;
-    }
+    if (tree.x + tree.width === elephant.x) score++;
   });
 
-  drawPipes();
+  drawTrees();
   drawScore();
 
   // Ground collision
-  if (elephant.y + elephant.height > canvas.height) {
-    endGame();
-  }
+  if (elephant.y + elephant.height > canvas.height) endGame();
 
   frame++;
   requestAnimationFrame(update);
@@ -164,9 +157,9 @@ function endGame() {
 
 // Reset game
 function resetGame() {
-  elephant.y = 300;
+  elephant.y = 200;
   elephant.velocity = 0;
-  pipes = [];
+  trees = [];
   score = 0;
   frame = 0;
   gameStarted = false;
