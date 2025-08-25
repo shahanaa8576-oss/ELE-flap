@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ele Flap</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      margin: auto;
+      background: url('forest.jpg') repeat-x;
+      background-size: cover;
+    }
+  </style>
+</head>
+<body>
+<canvas id="gameCanvas" width="400" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+let gameStarted = false;
+let gameOver = false;
+
+// Elephant image
+let elephantImg = new Image();
+elephantImg.src = "ele.png"; // your elephant image
+
+// Tree obstacle images
+let treeTopImg = new Image();
+treeTopImg.src = "https://i.ibb.co/3rR0gLZ/tree-top.png"; // cartoon tree top
+
+let treeBottomImg = new Image();
+treeBottomImg.src = "https://i.ibb.co/Tb5hj6q/tree-bottom.png"; // cartoon tree bottom
+
+// Elephant object (small size)
+let elephant = { x: 50, y: 300, width: 50, height: 50, gravity: 0.5, lift: -8, velocity: 0 };
+
+// Obstacles
+let pipes = [];
+let frame = 0;
+let score = 0;
+let bestScore = 0;
+
+// Start screen
+function drawStartScreen() {
+  ctx.fillStyle = "rgba(0,0,0,0.5)";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  ctx.fillStyle = "#fff";
+  ctx.font = "bold 40px Comic Sans MS";
+  ctx.textAlign = "center";
+  ctx.fillText("ELE FLAP 🐘", canvas.width/2, canvas.height/2 - 50);
+
+  ctx.font = "20px Comic Sans MS";
+  ctx.fillText("Press SPACE to Start", canvas.width/2, canvas.height/2 + 20);
+}
+
+// Game Over screen
+function drawGameOver() {
+  ctx.fillStyle = "rgba(0,0,0,0.7)";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  ctx.fillStyle = "#ffdf5d";
+  ctx.font = "bold 36px Comic Sans MS";
+  ctx.textAlign = "center";
+  ctx.fillText("GAME OVER 💥", canvas.width/2, canvas.height/2 - 60);
+
+  ctx.fillStyle = "#fff";
+  ctx.font = "20px Comic Sans MS";
+  ctx.fillText("Your Score: " + score, canvas.width/2, canvas.height/2 - 10);
+  ctx.fillText("Best Score: " + bestScore, canvas.width/2, canvas.height/2 + 30);
+
+  ctx.fillText("Press SPACE to Restart", canvas.width/2, canvas.height/2 + 80);
+}
+
+// Draw elephant
+function drawElephant() {
+  ctx.drawImage(elephantImg, elephant.x, elephant.y, elephant.width, elephant.height);
+}
+
+// Draw obstacles as trees
+function drawPipes() {
+  pipes.forEach(pipe => {
+    ctx.drawImage(treeTopImg, pipe.x, 0, pipe.width, pipe.top); // top tree
+    ctx.drawImage(treeBottomImg, pipe.x, canvas.height - pipe.bottom, pipe.width, pipe.bottom); // bottom tree
+  });
+}
+
+// Draw score
+function drawScore() {
+  ctx.fillStyle = "#fff";
+  ctx.font = "20px Comic Sans MS";
+  ctx.fillText("Score: " + score, 60, 50);
+}
+
+// Game loop
+function update() {
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  if (!gameStarted && !gameOver) {
+    drawStartScreen();
+    requestAnimationFrame(update);
+    return;
+  }
+
+  if (gameOver) {
+    drawGameOver();
+    requestAnimationFrame(update);
+    return;
+  }
+
+  // Elephant physics
+  elephant.velocity += elephant.gravity;
+  elephant.y += elephant.velocity;
+  drawElephant();
+
+  // Create obstacles periodically
+  if (frame % 90 === 0) {
+    let top = Math.random() * (canvas.height/2);
+    let bottom = canvas.height - top - 150;
+    pipes.push({ x: canvas.width, width: 50, top: top, bottom: bottom });
+  }
+
+  // Update obstacles
+  pipes.forEach((pipe, index) => {
+    pipe.x -= 2;
+    if (pipe.x + pipe.width < 0) pipes.splice(index, 1);
+
+    // Collision detection
+    if (elephant.x < pipe.x + pipe.width && elephant.x + elephant.width > pipe.x &&
+        (elephant.y < pipe.top || elephant.y + elephant.height > canvas.height - pipe.bottom)) {
+      endGame();
+    }
+
+    // Score
+    if (pipe.x + pipe.width === elephant.x) {
+      score++;
+    }
+  });
+
+  drawPipes();
+  drawScore();
+
+  // Ground collision
+  if (elephant.y + elephant.height > canvas.height) {
+    endGame();
+  }
+
+  frame++;
+  requestAnimationFrame(update);
+}
+
+// End game
+function endGame() {
+  gameOver = true;
+  if (score > bestScore) bestScore = score;
+}
+
+// Reset game
+function resetGame() {
+  elephant.y = 300;
+  elephant.velocity = 0;
+  pipes = [];
+  score = 0;
+  frame = 0;
+  gameStarted = false;
+  gameOver = false;
+}
+
+// Controls
+document.addEventListener("keydown", (e) => {
+  if (e.code === "Space") {
+    if (!gameStarted && !gameOver) {
+      gameStarted = true;
+    } else if (!gameOver) {
+      elephant.velocity = elephant.lift;
+    } else if (gameOver) {
+      resetGame();
+    }
+  }
+});
+
+update();
+</script>
+</body>
+</html>
